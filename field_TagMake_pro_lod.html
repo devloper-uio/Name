@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TagMake Pro - AI YouTube Analysis Suite</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            /* Dark Theme (Default) */
+            --primary: #00A6FF;
+            --primary-light: #69C9FF;
+            --secondary: #FF4F8B;
+            --accent: #FFA928;
+            --dark-bg: #0F1014;
+            --light-text: #EAEBF0;
+            --secondary-text: #A0A3AD;
+            --container-bg: rgba(20, 22, 28, 0.6);
+            --card-bg: linear-gradient(145deg, rgba(35, 38, 49, 0.7), rgba(25, 28, 36, 0.8));
+            --input-bg: rgba(10, 11, 14, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --shadow-color: rgba(0, 0, 0, 0.5);
+            --glow-color: rgba(0, 166, 255, 0.5);
+        }
+
+        body.light-mode {
+            /* Light Theme */
+            --primary: #007BFF;
+            --primary-light: #5BA8FF;
+            --secondary: #D9006C;
+            --accent: #FF8C00;
+            --dark-bg: #E9EEF3;
+            --light-text: #1A1C22;
+            --secondary-text: #4A5062;
+            --container-bg: rgba(255, 255, 255, 0.6);
+            --card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(240, 245, 250, 0.8));
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --glow-color: rgba(0, 123, 255, 0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--dark-bg);
+            background-image: radial-gradient(circle at 15% 50%, rgba(0, 166, 255, 0.1), transparent 30%),
+                              radial-gradient(circle at 85% 30%, rgba(255, 79, 139, 0.1), transparent 30%);
+            font-family: 'Inter', sans-serif;
+            color: var(--light-text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+        
+        /* Hide Google Translate Bar */
+        .skiptranslate { display: none !important; }
+        body { top: 0 !important; }
+        #goog-gt-tt { display: none !important; }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            flex-shrink: 0;
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .theme-switch { display: inline-block; height: 28px; position: relative; width: 50px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #333; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; border-radius: 28px; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 20px; left: 4px; position: absolute; transition: .4s; width: 20px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .main-content { padding: 40px; flex-grow: 1; }
+
+        .url-input-section { margin-bottom: 40px; text-align: center; }
+        .url-input-section label { display: block; font-size: 1.2rem; font-weight: 500; margin-bottom: 20px; color: var(--secondary-text); }
+        .input-wrapper { display: flex; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px var(--shadow-color); border: 1px solid var(--border-color); transition: all 0.3s ease; }
+        .input-wrapper:hover, .input-wrapper:focus-within { transform: translateY(-3px); box-shadow: 0 15px 35px var(--shadow-color), 0 0 20px var(--glow-color); }
+        #videoUrl { flex-grow: 1; background: var(--input-bg); border: none; padding: 18px 25px; font-size: 1rem; color: var(--light-text); outline: none; transition: background 0.3s; }
+        #videoUrl::placeholder { color: var(--secondary-text); }
+        #goButton { background: linear-gradient(90deg, var(--primary), var(--primary-light)); color: white; border: none; padding: 0 35px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 10px; }
+        #goButton:hover { filter: brightness(1.2); }
+
+        .tools-grid, .result-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+
+        .tool-card, .result-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tool-card:hover, .result-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px var(--shadow-color);
+            border-color: var(--primary);
+        }
+        
+        .tool-card .icon { font-size: 2rem; margin-bottom: 20px; color: var(--primary); }
+        .tool-card .title { font-size: 1.3rem; font-weight: 700; margin-bottom: 15px; color: var(--light-text); }
+        .tool-card .description { font-size: 0.95rem; color: var(--secondary-text); line-height: 1.6; }
+        .crown { position: absolute; top: 20px; right: 20px; font-size: 1.5rem; color: var(--accent); filter: drop-shadow(0 2px 4px var(--shadow-color)); }
+
+        #results-container { margin-top: 40px; padding-top: 40px; border-top: 1px solid var(--border-color); display: none; }
+        
+        .result-card h3 { font-size: 1.3rem; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+        .result-card pre, .result-card .content-box { background: var(--input-bg); padding: 20px; border-radius: 12px; color: var(--secondary-text); border: 1px solid var(--border-color); line-height: 1.7; }
+        .result-card pre { white-space: pre-wrap; word-wrap: break-word; font-family: 'Inter', sans-serif; }
+        
+        .tag-list { display: flex; flex-wrap: wrap; gap: 12px; }
+        .tag-item { background: linear-gradient(135deg, rgba(0, 166, 255, 0.15), rgba(255, 79, 139, 0.15)); color: var(--light-text); padding: 8px 18px; border-radius: 25px; font-size: 0.9rem; font-weight: 500; transition: all 0.3s; }
+        .tag-item:hover { transform: translateY(-2px); background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+
+        .stats-list { list-style: none; padding: 0; }
+        .stats-list li { padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .stats-list li:last-child { border-bottom: none; }
+        .stats-list strong { color: var(--accent); font-weight: 600; }
+
+        .loader { text-align: center; padding: 50px; }
+        .loader-text { font-size: 1.1rem; color: var(--secondary-text); margin-top: 20px; }
+        
+        .title-suggestion { padding: 12px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
+        .title-suggestion:last-child { border-bottom: none; }
+        .title-suggestion i { color: var(--accent); margin-right: 10px; }
+        
+        .footer {
+            padding: 25px 40px;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer a {
+            color: var(--secondary-text);
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: var(--primary);
+        }
+        
+        /* Copy Button */
+        .copy-btn { background: var(--primary); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-left: 10px; font-size: 0.8rem; flex-shrink: 0; }
+        .copy-btn:hover { filter: brightness(1.1); }
+
+        /* Mobile Responsive Design */
+        @media (max-width: 768px) {
+            body { padding: 0; }
+            .container { border-radius: 0; min-height: 100vh; border: none; }
+            .header { padding: 20px; flex-wrap: wrap; justify-content: center; }
+            .header h1 { font-size: 1.8rem; width: 100%; text-align: center; margin-bottom: 15px; }
+            .main-content { padding: 20px; }
+            .tools-grid, .result-card-grid { grid-template-columns: 1fr; }
+            .input-wrapper { flex-direction: column; }
+            #videoUrl { border-radius: 15px 15px 0 0; text-align: center; }
+            #goButton { border-radius: 0 0 15px 15px; padding: 18px; justify-content: center; }
+            .footer {
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>TagMake Pro</h1>
+            <div class="header-controls">
+                <div id="google_translate_element"></div>
+                <label class="theme-switch" for="checkbox">
+                    <input type="checkbox" id="checkbox" />
+                    <div class="slider"></div>
+                </label>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="url-input-section">
+                <label for="videoUrl">Enter YouTube Video URL for a Super-Powered Analysis</label>
+                <div class="input-wrapper">
+                    <input type="text" id="videoUrl" placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ" autocomplete="off">
+                    <button type="button" id="goButton"><i class="fas fa-bolt"></i> <span>Analyze Now</span></button>
+                </div>
+            </section>
+            
+            <div id="results-container"></div>
+
+            <div class="tools-grid" id="tools-grid-static">
+                <div class="tool-card"><span class="crown"><i class="fas fa-crown"></i></span><div class="icon"><i class="fas fa-heading"></i></div><h3 class="title">AI Title Generator</h3><p class="description">Get 3 high-impact, SEO-friendly titles engineered for clicks.</p></div>
+                <div class="tool-card"><span class="crown"><i class="fas fa-crown"></i></span><div class="icon"><i class="fas fa-tags"></i></div><h3 class="title">AI Tag Generator</h3><p class="description">Find high-search volume and trending tags for your video.</p></div>
+                <div class="tool-card"><div class="icon"><i class="fas fa-chart-line"></i></div><h3 class="title">Channel Analyzer</h3><p class="description">View core stats, growth potential, and channel category.</p></div>
+                <div class="tool-card"><div class="icon"><i class="fas fa-dollar-sign"></i></div><h3 class="title">Earning Calculator</h3><p class="description">Estimate potential monthly earnings based on video views.</p></div>
+                <div class="tool-card"><div class="icon"><i class="fas fa-tag"></i></div><h3 class="title">Video Tag Extractor</h3><p class="description">Extract all public tags from any video for competitor research.</p></div>
+                <div class="tool-card"><div class="icon"><i class="fas fa-image"></i></div><h3 class="title">Asset Downloader</h3><p class="description">Download Thumbnails, Banners, and Profile Pictures instantly.</p></div>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <a href="https://devloper-uio.github.io/Name/privacy_tagmake_p.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+            <a href="https://devloper-uio.github.io/Name/terms_tagmake_t.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+        </footer>
+    </div>
+
+<script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+          pageLanguage: 'en',
+          includedLanguages: 'en,bn', // English and Bengali
+          layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+          autoDisplay: false
+      }, 'google_translate_element');
+    }
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        setupTheme();
+        document.getElementById('goButton').addEventListener('click', processUrl);
+        document.getElementById('videoUrl').addEventListener('keypress', e => {
+            if (e.key === 'Enter') processUrl();
+        });
+    });
+
+    function setupTheme() {
+        const toggleSwitch = document.getElementById('checkbox');
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme) {
+            document.body.classList.add(currentTheme);
+            if (currentTheme === 'light-mode') toggleSwitch.checked = true;
+        }
+        toggleSwitch.addEventListener('change', e => {
+            document.body.classList.toggle('light-mode', e.target.checked);
+            localStorage.setItem('theme', e.target.checked ? 'light-mode' : 'dark-mode');
+        });
+    }
+
+    function processUrl() {
+        const url = document.getElementById('videoUrl').value.trim();
+        const videoId = getVideoId(url);
+        const resultsContainer = document.getElementById('results-container');
+        const staticGrid = document.getElementById('tools-grid-static');
+        
+        resultsContainer.innerHTML = `<div class="loader"><div class="spinner"></div><p class="loader-text">Igniting AI Analysis... Please Wait</p></div>`;
+        resultsContainer.style.display = 'block';
+        staticGrid.style.display = 'none';
+        resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        if (videoId) {
+            fetchAndDisplayData(videoId);
+        } else {
+            resultsContainer.innerHTML = createErrorCard('Invalid URL', 'Please enter a valid YouTube video URL to begin.');
+            staticGrid.style.display = 'grid';
+        }
+    }
+
+    function getVideoId(url) {
+        if (!url) return null;
+        const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/;
+        const match = url.match(regex);
+        return match ? match[1] : null;
+    }
+
+    async function fetchAndDisplayData(videoId) {
+        const resultsContainer = document.getElementById('results-container');
+        const apiKey = 'AIzaSyD7XykfkH6UEq5iXLC2ZdwHgCEYX1Ms2Os'; // Your API Key
+
+        try {
+            const videoApiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${apiKey}`;
+            const videoResponse = await fetch(videoApiUrl);
+            const videoData = await videoResponse.json();
+
+            if (!videoResponse.ok || !videoData.items || videoData.items.length === 0) {
+                throw new Error(videoData.error?.message || "Video not found. Check the URL and your API Key permissions.");
+            }
+            const video = videoData.items[0];
+            const channelId = video.snippet.channelId;
+
+            const channelApiUrl = `https://www.googleapis.com/youtube/v3/channels?id=${channelId}&part=statistics,snippet,brandingSettings&key=${apiKey}`;
+            const channelResponse = await fetch(channelApiUrl);
+            const channelData = await channelResponse.json();
+            
+            if (!channelResponse.ok || !channelData.items || channelData.items.length === 0) {
+                 throw new Error("Could not fetch channel details. The channel may be private or deleted.");
+            }
+            
+            resultsContainer.innerHTML = buildResultsHtml(video, channelData.items[0]);
+
+        } catch (error) {
+            resultsContainer.innerHTML = createErrorCard('Analysis Failed', error.message);
+            document.getElementById('tools-grid-static').style.display = 'grid';
+        }
+    }
+    
+    function createErrorCard(title, message) {
+        return `<div class="result-card" style="border-color: var(--secondary);"><h3><i class="fas fa-exclamation-triangle"></i> ${title}</h3><p>${message}</p></div>`;
+    }
+
+    function buildResultsHtml(video, channel) {
+        const { snippet, statistics: videoStats } = video;
+        const { statistics: channelStats, snippet: channelSnippet, brandingSettings } = channel;
+
+        // AI & Data Processing
+        const aiTitles = generateAITitles(snippet.title);
+        const aiDescription = generateAIDescription(snippet.title, snippet.channelTitle, snippet.description);
+        const aiTags = generateAITags(snippet.title, snippet.tags);
+        const aiTagsHtml = aiTags.map(tag => `<span class="tag-item">${tag}</span>`).join('');
+        const originalTags = snippet.tags || [];
+        const tagsHtml = (originalTags.length > 0) ? originalTags.map(tag => `<span class="tag-item">${tag}</span>`).join('') : '<p>No public tags found.</p>';
+        const bannerUrl = brandingSettings.image?.bannerExternalUrl;
+        const coverHtml = bannerUrl ? `<a href="${bannerUrl}" target="_blank" rel="noopener noreferrer">Download Banner</a>` : `<span>No public banner</span>`;
+        const growthPercentage = (parseInt(channelStats.subscriberCount) && parseInt(channelStats.viewCount)) ? ((parseInt(channelStats.subscriberCount) / parseInt(channelStats.viewCount)) * 1000).toFixed(2) : '0.00';
+        
+        // Earnings Estimation
+        const views = parseInt(videoStats.viewCount) || 0;
+        const lowRPM = 1.5;
+        const highRPM = 8;
+        const estimatedEarningsLow = (views / 1000) * lowRPM;
+        const estimatedEarningsHigh = (views / 1000) * highRPM;
+
+        return `
+            <div class="result-card-grid">
+                <div class="result-card">
+                    <h3><i class="fas fa-crown"></i> AI Title Suggestions</h3>
+                    <div class="content-box">
+                        ${aiTitles.map(title => `
+                            <div class="title-suggestion">
+                                <span class="notranslate"><i class="fas fa-check-circle"></i> ${title}</span>
+                                <button class="copy-btn" onclick="copyToClipboard(this, '${title.replace(/'/g, "\\'")}')">Copy</button>
+                            </div>`).join('')}
+                    </div>
+                </div>
+                <div class="result-card">
+                    <h3><i class="fas fa-crown"></i> High-Search Tags</h3>
+                    <div class="tag-list notranslate">${aiTagsHtml}</div>
+                    <button class="copy-btn" style="margin-top: 15px;" onclick="copyToClipboard(this, '${aiTags.join(', ')}')">Copy All</button>
+                </div>
+                <div class="result-card">
+                    <h3><i class="fas fa-chart-pie"></i> Channel Analysis</h3>
+                    <ul class="stats-list">
+                        <li>Subscribers <strong class="notranslate">${parseInt(channelStats.subscriberCount || 0).toLocaleString()}</strong></li>
+                        <li>Total Views <strong class="notranslate">${parseInt(channelStats.viewCount || 0).toLocaleString()}</strong></li>
+                        <li>Growth Potential <strong class="notranslate" title="Subscribers per 1,000 Views">${growthPercentage}</strong></li>
+                        <li>Category ID <strong class="notranslate">${snippet.categoryId || 'Not Specified'}</strong></li>
+                    </ul>
+                </div>
+                 <div class="result-card">
+                    <h3><i class="fas fa-dollar-sign"></i> Est. Video Earnings</h3>
+                    <div class="content-box">
+                        <p>Based on this video's <strong class="notranslate">${views.toLocaleString()}</strong> views, potential earnings could be:</p>
+                        <h4 class="notranslate" style="text-align:center; margin:15px 0; font-size: 1.5rem; color: var(--accent);">$${estimatedEarningsLow.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} - $${estimatedEarningsHigh.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h4>
+                        <small>*This is an estimate. Actual earnings depend on audience, niche, and monetization methods.</small>
+                    </div>
+                </div>
+                <div class="result-card">
+                    <h3><i class="fas fa-tags"></i> Original Video Tags</h3>
+                    <div class="tag-list notranslate">${tagsHtml}</div>
+                    ${originalTags.length > 0 ? `<button class="copy-btn" style="margin-top: 15px;" onclick="copyToClipboard(this, '${originalTags.join(', ')}')">Copy All</button>`: ''}
+                </div>
+                <div class="result-card">
+                    <h3><i class="fas fa-download"></i> Asset Downloads</h3>
+                    <ul class="stats-list">
+                        <li><a href="https://img.youtube.com/vi/${video.id}/maxresdefault.jpg" target="_blank" rel="noopener noreferrer">Max-Res Thumbnail</a> <i class="fas fa-arrow-right"></i></li>
+                        <li><a href="${channelSnippet.thumbnails.high.url}" target="_blank" rel="noopener noreferrer">Profile Picture</a> <i class="fas fa-arrow-right"></i></li>
+                        <li>${coverHtml} <i class="fas fa-arrow-right"></i></li>
+                    </ul>
+                </div>
+            </div>`;
+    }
+    
+    function copyToClipboard(btn, text) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = 'Copied!';
+            // Use a class to prevent re-translation of "Copied!"
+            btn.classList.add('notranslate'); 
+            setTimeout(() => { 
+                btn.innerText = originalText; 
+                btn.classList.remove('notranslate');
+            }, 2000);
+        });
+    }
+
+    // Enhanced "AI" simulation functions
+    function generateAITitles(title) {
+        const cleanTitle = title.replace(/\|.*$/,'').trim();
+        return [
+            `The Ultimate Guide to ${cleanTitle} (${new Date().getFullYear()})`,
+            `${cleanTitle}: EVERYTHING You Need to Know!`,
+            `I Tried ${cleanTitle} and This Happened... (Shocking Results)`
+        ];
+    }
+    function generateAIDescription(title, channel, desc) { 
+        return `⚡️ UNLOCK THE SECRETS of "${title}" in this powerhouse video! We dive deep into the essential details, sharing tips and tricks you won't find anywhere else.\n\n${desc.substring(0, 120)}...\n\n✅ Key Moments:\n00:00 - Intro\n01:25 - Core Concepts\n03:40 - Advanced Tips\n\n🔔 Subscribe to ${channel} for more exclusive content!\n#${title.split(' ')[0]} #${channel.replace(/\s/g,'')} #ExpertTips`;
+    }
+    function generateAITags(title, tags = []) { 
+        const baseTags = title.toLowerCase().split(' ').filter(t => t.length > 3);
+        const coreTags = [...new Set([...baseTags, ...tags.slice(0, 3)])];
+        return [...new Set([
+            ...coreTags,
+            `${title} tutorial`,
+            `${title} guide`,
+            `how to ${title.toLowerCase()}`,
+            "High-Search Volume",
+            "Trending Topic"
+        ])];
+    }
+</script>
+
+</body>
+</html>
